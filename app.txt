@@ -1,0 +1,14 @@
+Q: What is this app?
+A: This is an mini project app let you know WHERE IS THE NEAREST ACCOMMODATION FROM MY LOCATION?
+You can easily search and find the accommodation by what accommodation's type is.
+There are three kinds of accommodation you can choose which are hotel, motel and B&B.
+
+Q: How it works?
+A: There are 5 buttons on the top. When you click [Geolocation] button, it shows your location on the map.
+[Check Directions] shows directions between the marker that you clicked and entered street name below the map.
+[Filter Motel Only] shows you only filtered hotel type accommodations.
+[Filter B & B Only] shows you only filtered hotel type accommodations.
+[Filter Hotel Only] shows you only filtered hotel type accommodations.
+[Show All] shows you all kinds of accommodations.
+
+Also, Mode of Travel allows you to find the exact road ahead of time by determining what state you are in.

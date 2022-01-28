@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Google Map Marker</title>
+</head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+<link rel="stylesheet" href="style.css">
+
+<body>
+  <h1>Mini Google Map Marker</h1>
+  <div class="container">
+    <div id="result"> </div>
+    <div class="btn">
+      <button id="start">Geolocation</button>
+      <button id="direction">Check Directions</button>
+      <button id="hotel" class="filter">Filter Hotel Only</button>
+      <button id="motel" class="filter">Filter Motel Only</button>
+      <button id="bnb" class="filter">Filter B&B Only</button>
+      <button id="all" class="filter active">Show All</button>
+    </div>
+    <div id="floating-panel">
+      <b>Mode of Travel: </b>
+      <select id="mode">
+        <option value="DRIVING">Driving</option>
+        <option value="WALKING">Walking</option>
+        <option value="BICYCLING">Bicycling</option>
+        <option value="TRANSIT">Transit</option>
+      </select>
+    </div>
+    <div class="map-wrap">
+      <div id="map"></div>
+    </div>
+    <div class="address">
+      <strong style="font-size:22px;">Enter Street Name:</strong>
+      <input type="text" id="address" size="75" style="font-size:22px;">
+      <button id="geocode" style="font-size:22px;">Geocode</button>
+    </div>
+  </div>
+
+  <!--Get Google Map's API key-->
+  <script async
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCbsua4EskTMpwMIvO5vkvTgw35rhCwTfs&callback=initMap">
+  </script>
+  <script src="accommodation.js"></script>
+  <script>
+    // Create google map function with first loading page's lat & lng & zoom set
+    function initMap() {
+
+      // Create the map
+      map = new google.maps.Map(document.getElementById("map"), {
+        center: {
+          lat: 43.2387,
+          lng: -79.8881
+        },
+        zoom: 12,
+      });
+
+      // Create directions services used to provide directions and render mode work
+      directionsService = new google.maps.DirectionsService();
+      directionsRenderer = new google.maps.DirectionsRenderer();
+      directionsRenderer.setMap(map);
+      document.getElementById("mode").addEventListener("change", () => {
+        findDirection(directionsService, directionsRenderer);
+      });
+      // Create infowindow
+      // Create geocoder service object
+      infowindow = new google.maps.InfoWindow();
+      geocoder = new google.maps.Geocoder();
+
+      // When the user clicked marker, it shows marker's info
+      marker_clicked = function () {
+        infowindow.close();
+        infowindow.setContent(
+          "<h3>" + this.NAME + "</h3>" +
+          "<p>Street is " + this.ADDRESS +
+          "<p>Web site is <a href=\"" + this.WEBSITE_URL + " target=\"_blank\">" + "HERE</a>");
+        infowindow.open(map, this);
+        street = this.ADDRESS;
+        console.log(this.ADDRESS)
+      }
+
+      let markers = [];
+
+      // Read every accommodations and store info from accommodation.js file
+      // Change marker's image
+      for (i = 0; i < accommodation.length; i++) {
+        if (accommodation[i].properties.CATEGORY == "Hotel")
+          new_icon = "http://maps.google.com/mapfiles/kml/paddle/grn-blank.png";
+        else if (accommodation[i].properties.CATEGORY == "Bed and Breakfast")
+          new_icon = "http://maps.google.com/mapfiles/kml/paddle/purple-blank.png";
+        else if (accommodation[i].properties.CATEGORY == "Motel")
+          new_icon = "http://maps.google.com/mapfiles/kml/paddle/pink-blank.png";
+        else
+          new_icon = "http://maps.google.com/mapfiles/kml/paddle/blu-blank.png";
+
+
+        new_marker = new google.maps.Marker({
+          position: {
+            lat: parseFloat(accommodation[i].properties.LATITUDE),
+            lng: parseFloat(accommodation[i].properties.LONGITUDE)
+          },
+          title: accommodation[i].properties.NAME,
+          icon: new_icon
+        });
+
+        new_marker.setMap(map);
+
+
+        new_marker.CATEGORY = accommodation[i].properties.CATEGORY;
+        new_marker.ADDRESS = accommodation[i].properties.ADDRESS;
+        new_marker.NAME = accommodation[i].properties.NAME;
+        var street = accommodation[i].properties.ADDRESS;
+        new_marker.addListener("click", marker_clicked);
+
+        markers.push(new_marker);
+      }
+
+      // Distinguish marker's image by category
+      function filterHotel() {
+        for (i = 0; i < markers.length; i++) {
+          if (markers[i].CATEGORY == "Hotel")
+            markers[i].setMap(map);
+          else
+            markers[i].setMap(null);
+        }
+      }
+
+      document.getElementById("hotel").onclick = filterHotel;
+
+      function filterMotel() {
+        for (i = 0; i < markers.length; i++) {
+          if (markers[i].CATEGORY == "Motel")
+            markers[i].setMap(map);
+          else
+            markers[i].setMap(null);
+        }
+      }
+
+      document.getElementById("motel").onclick = filterMotel;
+
+      function filterBNB() {
+        for (i = 0; i < markers.length; i++) {
+          if (markers[i].CATEGORY == "Bed and Breakfast")
+            markers[i].setMap(map);
+          else
+            markers[i].setMap(null);
+        }
+      }
+
+      document.getElementById("bnb").onclick = filterBNB;
+
+      function showAll() {
+        for (i = 0; i < markers.length; i++)
+          markers[i].setMap(map);
+      }
+
+      document.getElementById("all").onclick = showAll;
+
+
+      // Create geolocation on the map
+      var x = document.getElementById("result");
+      var watchID;
+      $("#start").on('click', function () {
+        watchID = window.navigator.geolocation.watchPosition(success, showError, {
+          enableHighAccuracy: true,
+          maximumAge: 0
+        });
+      });
+
+      // Geolocation's success function adding different icon marker image
+      function success(position, icon) {
+        var center = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+        new_icon = "http://maps.google.com/mapfiles/kml/shapes/poi.png"
+        map = new google.maps.Map($("#map").get(0), {
+          mapTypeId: google.maps.MapTypeId.ROADMAP,
+          zoom: 12,
+          center: center
+        });
+
+        var marker = new google.maps.Marker({
+          position: center,
+          title: 'Current My Location',
+          map: map,
+          icon: new_icon
+        });
+      }
+
+      // Geolocation's error function
+      function showError(error) {
+
+        // the error function is given an error object containing a code property 
+        // that we can look at to determine which error occurred...
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            x.innerHTML = "User denied the request for Geolocation."
+            break;
+          case error.POSITION_UNAVAILABLE:
+            x.innerHTML = "Location information is unavailable."
+            break;
+          case error.TIMEOUT:
+            x.innerHTML = "The request to get user location timed out."
+            break;
+          case error.UNKNOWN_ERROR:
+            x.innerHTML = "An unknown error occurred."
+            break;
+        }
+      }
+
+
+      function codeAddress() {
+        var address = document.getElementById('address').value;
+
+        // perform geocoding for the address entered into the input textbox, a 
+        // callback function is given the latitude and longitude as an an 
+        // argument as part of a results object..
+        geocoder.geocode({
+          'address': address
+        }, function (results, status, icon) {
+          if (status == 'OK') {
+            new_icon = "http://maps.google.com/mapfiles/kml/shapes/poi.png";
+
+            // put a marker on the map at the given position
+            var marker = new google.maps.Marker({
+              map: map,
+              position: results[0].geometry.location,
+              icon: new_icon
+            });
+          } else {
+            alert('Geocode was not successful for the following reason: ' + status);
+          }
+        });
+      }
+
+      // call the codeAddress function when the geolocate button is clicked
+      document.getElementById("geocode").onclick = codeAddress;
+
+
+      // Create find direction function between input geocoding and pressed marker street
+      function findDirection() {
+
+        // Store what mode user choose
+        const selectedMode = document.getElementById("mode").value;
+
+        // setup a basic directions request with origin, destination, travel mode
+        request = {
+          origin: address.value + ", Hamilton, Ontario",
+          destination: street + ", Hamilton, Ontario",
+          travelMode: google.maps.TravelMode[selectedMode]
+        };
+
+        // use the directions service and directions renderer to render the 
+        // directions on the map
+        directionsService.route(request, function (result, status) {
+          if (status == 'OK') {
+            directionsRenderer.setDirections(result);
+            console.log(result);
+          }
+        });
+      }
+
+      // call the codeAddress function when the geolocate button is clicked
+      document.getElementById("direction").onclick = findDirection;
+
+    };
+  </script>
+</body>
+
+</html>
